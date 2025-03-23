@@ -5,25 +5,52 @@ import { SupabaseService } from '../supabase/supabase.service';
 export class PatientService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async addNewPatient(doctorInputData: any) {
+  /**
+   * Create a new patient profile
+   * @param patientData - The patient data to be created. Expected to contain the following fields:
+   * - full_name: string
+   * - gender: string
+   * - age: number
+   * - phone_number: string
+   * @returns The result of the operation
+   */
+  async createPatient(patientData: any) {
+    try {
+      // Insert into patients table
+      const { error: patientsError } = await this.supabaseService
+        .getClient()
+        .from('patients')
+        .insert([patientData]);
+
+      if (patientsError) {
+        throw new Error(
+          `Error inserting into table: ${patientsError.message}`,
+        );
+      }
+
+      return { success: true, message: 'Patient created successfully' };
+    } catch (error) {
+      throw new Error(`Failed to create patient: ${error.message}`);
+    }
+  }
+
+  async addNewPatient(patientData: any) {
     try {
       // Insert into doctor_inputs table
       const { error: insertError } = await this.supabaseService
         .getClient()
-        .from('doctor_inputs')
-        .insert([doctorInputData]);
+        .from('patients')
+        .update([patientData])
+        .eq('id', patientData.id);
 
       if (insertError) {
         throw new Error(
-          `Error inserting into doctor_inputs: ${insertError.message}`,
+          `Error inserting into patients: ${insertError.message}`,
         );
       }
 
       // If successful, pass the doctorInputData to addPatientToDisplayTable
-      await this.addPatientToDisplayTable(
-        doctorInputData.patient_id,
-        doctorInputData,
-      );
+      await this.addPatientToDisplayTable(patientData.id);
 
       return { success: true, message: 'Patient added successfully' };
     } catch (error) {
@@ -32,66 +59,55 @@ export class PatientService {
   }
 
   async addPatientToDisplayTable(
-    patientId: string,
-    doctorInputData: any,
+    patientId: any,
   ): Promise<any> {
     try {
-      // Fetch the patient profile from the profiles table using patient_id
-      const { data: profileData, error: profileError } =
-        await this.supabaseService
-          .getClient()
-          .from('profiles')
-          .select('id, full_name, email')
-          .eq('id', patientId)
-          .single();
+      // Fetch the patients table data by patient_id
+      const { data: patientData, error: patientError } = await this.supabaseService
+        .getClient()
+        .from('patients')
+        .select('*')
+        .eq('id', patientId)
+        .single();
 
-      if (profileError) {
-        throw new Error(`Error fetching profile data: ${profileError.message}`);
-      }
-
-      // Fetch the existing patient inputs from the patient_inputs table using patient_id
-      const patientInputsData =
-        await this.supabaseService.fetchUserInputsByPatientId(patientId);
-
-      if (!patientInputsData) {
-        console.error('No patient inputs data found.');
+      if (patientError) {
+        throw new Error(`Error fetching patient data: ${patientError.message}`);
       }
 
       // Ensure that all required data exists
-      if (profileData && patientInputsData && doctorInputData) {
-        const newDisplayRecord = {
-          patient_id: profileData.id,
-          full_name: profileData.full_name,
-          email: profileData.email,
-          phone_number: patientInputsData.phone_number,
-          age: patientInputsData.age,
-          gender: patientInputsData.gender,
-          medical_condition: doctorInputData.medical_condition, // Use doctorInputData directly
-          disability_level: doctorInputData.disability_level, // Use doctorInputData directly
-        };
-
-        // Insert the new display record into the patient_display table
-        const { error: insertError } = await this.supabaseService
-          .getClient()
-          .from('patient_display')
-          .insert([newDisplayRecord]);
-
-        if (insertError) {
-          throw new Error(
-            `Error inserting into patient_display: ${insertError.message}`,
-          );
-        }
-
-        return {
-          success: true,
-          message: 'Patient added to display table successfully',
-        };
-      } else {
+      if (!patientData) {
         return {
           success: false,
-          message: 'Required data is missing from one or more tables',
+          message: 'Unable to find patient data',
         };
       }
+
+      const newDisplayRecord = {
+        patient_id: patientData.id,
+        full_name: patientData.full_name,
+        phone_number: patientData.phone_number,
+        age: patientData.age,
+        gender: patientData.gender,
+        medical_condition: patientData.medical_condition,
+        disability_level: patientData.disability_level,
+      };
+
+      // Insert the new display record into the patient_display table
+      const { error: insertError } = await this.supabaseService
+        .getClient()
+        .from('patient_display')
+        .insert([newDisplayRecord]);
+
+      if (insertError) {
+        throw new Error(
+          `Error inserting into patient_display: ${insertError.message}`,
+        );
+      }
+
+      return {
+        success: true,
+        message: 'Patient added to display table successfully',
+      };
     } catch (error) {
       console.log(error.message);
       throw new Error(
