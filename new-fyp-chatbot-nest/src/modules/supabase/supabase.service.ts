@@ -324,9 +324,8 @@ export class SupabaseService {
   async getPatientNames() {
     try {
       const { data, error } = await this.supabase
-        .from('profiles')
+        .from('patients')
         .select('id, full_name')
-        .eq('role', 'patient'); // Filter by patients only
 
       if (error) {
         throw new Error(`Error fetching patient names: ${error.message}`);
