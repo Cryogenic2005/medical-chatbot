@@ -33,10 +33,25 @@ export class AppController {
     return { profileId: id };
   }
 
-  @Post('add-patient')
-  async addNewPatient(@Body() doctorInputData: any) {
+  @Post('create-patient')
+  async createPatient(@Body() patientData: any) {
     try {
-      const result = await this.patientService.addNewPatient(doctorInputData);
+      const result = await this.patientService.createPatient(patientData);
+
+      if (!result.success) {
+        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
+      }
+
+      return { success: true, message: 'Patient created successfully' };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Post('add-patient')
+  async addNewPatient(@Body() patientData: any) {
+    try {
+      const result = await this.patientService.addNewPatient(patientData);
 
       if (!result.success) {
         throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
