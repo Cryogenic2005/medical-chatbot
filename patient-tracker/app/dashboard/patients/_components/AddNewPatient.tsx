@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
+import CreatePatientForm from "./CreateNewPatient";
 import FileUpload from "./FileUpload";
 
 type Inputs = {
@@ -33,6 +34,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
   const [open, setOpen] = useState(false);
   const [patients, setPatients] = useState<any[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [showNewPatientForm, setShowNewPatientForm] = useState(false);
   const {
     register,
     handleSubmit,
@@ -42,29 +44,25 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
 
   const moderate_hr_min = watch("moderate_hr_min");
   const vigorous_hr_min = watch("vigorous_hr_min");
+  
+  const fetchPatients = async () => {
+    try {
+      const response = await fetch(
+        `http://${window.location.hostname}:${
+          process.env.NEXT_PUBLIC_API_PORT || 3000
+        }/api/data/get-patient-names`
+      );
+      const data = await response.json();
 
-  useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const response = await fetch(
-          `http://${window.location.hostname}:${
-            process.env.NEXT_PUBLIC_API_PORT || 3000
-          }/api/data/get-patient-names`
-        );
-        const data = await response.json();
-
-        if (Array.isArray(data.patients)) {
-          setPatients(data.patients);
-        } else {
-          setPatients([]);
-        }
-      } catch (error) {
-        toast.error("Error fetching patients.");
+      if (Array.isArray(data.patients)) {
+        setPatients(data.patients);
+      } else {
+        setPatients([]);
       }
-    };
-
-    fetchPatients();
-  }, []);
+    } catch (error) {
+      toast.error("Error fetching patients.");
+    }
+  };
 
   const handleFilesUploaded = (files: File[]) => {
     setUploadedFiles(files);
@@ -82,7 +80,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
         .map((time) => time.trim());
 
       const patientDetails = {
-        patient_id: data.patientId,
+        id: data.patientId,
         moderate_hr_min: data.moderate_hr_min,
         moderate_hr_max: data.moderate_hr_max,
         vigorous_hr_min: data.vigorous_hr_min,
@@ -143,6 +141,8 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
       toast.error("Error submitting patient data.");
     }
   };
+  
+  useEffect(() => {fetchPatients()}, []);
 
   return (
     <div>
@@ -155,21 +155,38 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="py-3">
                   <label>Patient</label>
-                  <select
-                    {...register("patientId", { required: true })}
-                    className="bg-white border rounded-md p-2 w-full"
-                  >
-                    <option value="">Select a patient</option>
-                    {Array.isArray(patients) && patients.length > 0 ? (
-                      patients.map((patient) => (
-                        <option key={patient.id} value={patient.id}>
-                          {patient.full_name}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">No patients available</option>
-                    )}
-                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      {...register("patientId", { required: true })}
+                      className="bg-white border rounded-md p-2 w-full"
+                    >
+                      <option value="">Select a patient</option>
+                      {Array.isArray(patients) && patients.length > 0 ? (
+                        patients.map((patient) => (
+                          <option key={patient.id} value={patient.id}>
+                            {patient.full_name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">No patients available</option>
+                      )}
+                    </select>
+
+                    <button
+                      onClick={() => setShowNewPatientForm(true)}
+                      className="bg-white border rounded-md p-2 hover:bg-blue-200"
+                    >
+                      ➕
+                    </button>
+                  </div>
+
+                  {showNewPatientForm && (
+                    <CreatePatientForm
+                      onClose={() => setShowNewPatientForm(false)}
+                      onPatientAdded={fetchPatients}
+                    />
+                  )}
+
                   {errors.patientId && (
                     <p className="text-red-500">This field is required</p>
                   )}
