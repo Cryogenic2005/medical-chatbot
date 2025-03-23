@@ -71,7 +71,6 @@ function PatientListTable({ reload, setReload }) {
   const [colDefs, setColDefs] = useState([
     { field: "patient_id", headerName: "Patient ID", hide: true },
     { field: "full_name", headerName: "Name", filter: true },
-    { field: "email", headerName: "Email", filter: true },
     { field: "phone_number", headerName: "Phone Number", filter: true },
     { field: "age", headerName: "Age", filter: true },
     { field: "gender", headerName: "Gender", filter: true },
