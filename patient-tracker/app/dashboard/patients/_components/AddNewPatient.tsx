@@ -11,11 +11,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
-import CreatePatientForm from "./CreateNewPatient";
 import FileUpload from "./FileUpload";
 
 type Inputs = {
-  patientId: string;
+  full_name: string;
+  gender: string;
+  age: string;
+  phone_number: string;
   moderate_hr_min: string;
   moderate_hr_max: string;
   vigorous_hr_min: string;
@@ -32,9 +34,7 @@ type AddNewPatientProps = {
 
 function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
   const [open, setOpen] = useState(false);
-  const [patients, setPatients] = useState<any[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [showNewPatientForm, setShowNewPatientForm] = useState(false);
   const {
     register,
     handleSubmit,
@@ -44,43 +44,22 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
 
   const moderate_hr_min = watch("moderate_hr_min");
   const vigorous_hr_min = watch("vigorous_hr_min");
-  
-  const fetchPatients = async () => {
-    try {
-      const response = await fetch(
-        `http://${window.location.hostname}:${
-          process.env.NEXT_PUBLIC_API_PORT || 3000
-        }/api/data/get-patient-names`
-      );
-      const data = await response.json();
-
-      if (Array.isArray(data.patients)) {
-        setPatients(data.patients);
-      } else {
-        setPatients([]);
-      }
-    } catch (error) {
-      toast.error("Error fetching patients.");
-    }
-  };
 
   const handleFilesUploaded = (files: File[]) => {
     setUploadedFiles(files);
   };
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+  const addPatient = async (data: Inputs) => {
     try {
-      if (!data.patientId) {
-        toast.error("Please select a patient.");
-        return;
-      }
-
       const promptTimesArray = data.prompt_times
         .split(",")
         .map((time) => time.trim());
 
       const patientDetails = {
-        id: data.patientId,
+        full_name:    data.full_name,
+        gender:       data.gender,
+        age:          data.age,
+        phone_number: data.phone_number,
         moderate_hr_min: data.moderate_hr_min,
         moderate_hr_max: data.moderate_hr_max,
         vigorous_hr_min: data.vigorous_hr_min,
@@ -90,8 +69,6 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
         medical_condition: data.medical_condition,
         disability_level: data.disability_level,
       };
-
-      console.log(patientDetails);
 
       const addPatientResponse = await fetch(
         `http://${window.location.hostname}:${
@@ -105,15 +82,34 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
       );
 
       if (!addPatientResponse.ok) {
+        console.log(addPatientResponse);
+
+        if (addPatientResponse.status === 400) {
+          const { message } = await addPatientResponse.json();
+          toast.error(message);
+          return;
+        }
+
         toast.error("Failed to add patient details.");
         return;
       }
 
       toast.success("Patient details added successfully.");
 
+      const { patientId } = await addPatientResponse.json();
+      return patientId;
+    } catch (error) {
+      toast.error("Error adding patient.");
+    }
+  }
+
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    try {
+      const patientId = await addPatient(data);
+
       if (uploadedFiles.length > 0) {
         const formData = new FormData();
-        formData.append("profileID", data.patientId);
+        formData.append("profileID", patientId);
         uploadedFiles.forEach((file) => {
           formData.append("files", file);
         });
@@ -141,8 +137,6 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
       toast.error("Error submitting patient data.");
     }
   };
-  
-  useEffect(() => {fetchPatients()}, []);
 
   return (
     <div>
@@ -153,46 +147,53 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
             <DialogTitle>Add New Patient</DialogTitle>
             <DialogDescription>
               <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="py-3">
-                  <label>Patient</label>
-                  <div className="flex gap-2">
-                    <select
-                      {...register("patientId", { required: true })}
-                      className="bg-white border rounded-md p-2 w-full"
-                    >
-                      <option value="">Select a patient</option>
-                      {Array.isArray(patients) && patients.length > 0 ? (
-                        patients.map((patient) => (
-                          <option key={patient.id} value={patient.id}>
-                            {patient.full_name}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">No patients available</option>
-                      )}
-                    </select>
-
-                    <button
-                      onClick={() => setShowNewPatientForm(true)}
-                      className="bg-white border rounded-md p-2 hover:bg-blue-200"
-                    >
-                      ➕
-                    </button>
-                  </div>
-
-                  {showNewPatientForm && (
-                    <CreatePatientForm
-                      onClose={() => setShowNewPatientForm(false)}
-                      onPatientAdded={fetchPatients}
-                    />
-                  )}
-
-                  {errors.patientId && (
+                <div className="py-3" id="full_name_field">
+                  <label>Full Name</label>
+                  <Input
+                    placeholder="Enter Patient Full Name"
+                    {...register("full_name", { required: true })}
+                  />
+                  {errors.full_name && (
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-
-                <div className="py-3">
+                <div className="py-3" id="gender_field">
+                  <label>Gender</label>
+                  <select
+                    {...register("gender", { required: true })}
+                    className="bg-white border rounded-md p-2 w-full"
+                  >
+                    <option value="">Select Disability Level</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                  {errors.gender && (
+                    <p className="text-red-500">This field is required</p>
+                  )}
+                </div>
+                <div className="py-3" id="age_field">
+                  <label>Age</label>
+                  <Input
+                    type="number"
+                    placeholder="Enter Patient Age"
+                    {...register("age", { required: true })}
+                  />
+                  {errors.age && (
+                    <p className="text-red-500">This field is required</p>
+                  )}
+                </div>
+                <div className="py-3" id="phone_number_field">
+                    <label>Phone Number</label>
+                    <Input
+                      placeholder="Enter Patient Phone Number"
+                      {...register("phone_number", { required: true })}
+                    />
+                    {errors.phone_number && (
+                      <p className="text-red-500">This field is required</p>
+                    )}
+                </div>
+                <div className="py-3" id="min_moderate_hr_field">
                   <label>Moderate Heart Rate (Min)</label>
                   <Input
                     type="number"
@@ -203,7 +204,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-                <div className="py-3">
+                <div className="py-3" id="max_moderate_hr_field">
                   <label>Moderate Heart Rate (Max)</label>
                   <Input
                     type="number"
@@ -222,7 +223,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     </p>
                   )}
                 </div>
-                <div className="py-3">
+                <div className="py-3" id="min_vigorous_hr_field">
                   <label>Vigorous Heart Rate (Min)</label>
                   <Input
                     type="number"
@@ -233,7 +234,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-                <div className="py-3">
+                <div className="py-3" id="max_vigorous_hr_field">
                   <label>Vigorous Heart Rate (Max)</label>
                   <Input
                     type="number"
@@ -252,7 +253,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     </p>
                   )}
                 </div>
-                <div className="py-3">
+                <div className="py-3" id="target_duration_field">
                   <label>Target Duration (Week)</label>
                   <Input
                     type="number"
@@ -263,7 +264,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-                <div className="py-3">
+                <div className="py-3" id="prompt_times_field">
                   <label>Prompt Times</label>
                   <Input
                     placeholder="Enter Prompt Times (comma-separated)"
@@ -273,7 +274,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-                <div className="py-3">
+                <div className="py-3" id="medical_condition_field">
                   <label>Medical Condition</label>
                   <Input
                     placeholder="Enter Medical Condition"
@@ -283,7 +284,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-                <div className="py-3">
+                <div className="py-3" id="disability_level_field">
                   <label>Disability Level</label>
                   <select
                     {...register("disability_level", { required: true })}
@@ -298,15 +299,14 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-
-                <div className="py-3">
+                <div className="py-3" id="file_upload_field">
                   <label>Upload Files</label>
                   <FileUpload onFilesUploaded={handleFilesUploaded} />
                 </div>
 
                 <div className="flex gap-3 items-center justify-end mt-5">
-                  <Button type="submit">Save</Button>
-                  <Button onClick={() => setOpen(false)} variant="ghost">
+                  <Button type="submit">Add</Button>
+                  <Button type="button" onClick={() => setOpen(false)} variant="ghost">
                     Cancel
                   </Button>
                 </div>

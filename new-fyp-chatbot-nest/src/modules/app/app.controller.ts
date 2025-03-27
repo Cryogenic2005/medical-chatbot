@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Post,
   Get,
+  Delete,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PatientService } from '../patient/patient.service';
@@ -33,58 +34,10 @@ export class AppController {
     return { profileId: id };
   }
 
-  @Post('create-patient')
-  async createPatient(@Body() patientData: any) {
+  @Get('get-patients')
+  async getPatients() {
     try {
-      const result = await this.patientService.createPatient(patientData);
-
-      if (!result.success) {
-        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
-      }
-
-      return { success: true, message: 'Patient created successfully' };
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @Post('add-patient')
-  async addNewPatient(@Body() patientData: any) {
-    try {
-      const result = await this.patientService.addNewPatient(patientData);
-
-      if (!result.success) {
-        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
-      }
-
-      return { success: true, message: 'Patient added successfully' };
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @Get('get-patient-names')
-  async getPatientNames() {
-    try {
-      const patients = await this.supabaseService.getPatientNames();
-
-      if (!patients || patients.length === 0) {
-        throw new HttpException('No patients found', HttpStatus.NOT_FOUND);
-      }
-
-      return { patients };
-    } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while fetching patient names',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  @Get('get-patient-display-list')
-  async getPatientDisplayList() {
-    try {
-      const patients = await this.supabaseService.getPatientDisplayList();
+      const patients = await this.patientService.getPatients();
 
       if (!patients || patients.length === 0) {
         // Return a 204 No Content if no patients are found, instead of throwing an error
@@ -108,6 +61,54 @@ export class AppController {
         message: 'An error occurred while fetching patient display data',
         error: error.message,
       };
+    }
+  }
+
+  @Post('add-patient')
+  async addNewPatient(@Body() patientData: any) {
+    try {
+      const result = await this.patientService.addNewPatient(patientData);
+
+      if (!result.success) {
+        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
+      }
+
+      return { success: true, message: 'Patient added successfully', patientId: result.patientId };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Delete('delete-patient')
+  async deletePatient(@Body('id') id: string) {
+    try {
+      const result = await this.patientService.deletePatient(id);
+
+      if (!result.success) {
+        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
+      }
+
+      return { success: true, message: 'Patient deleted successfully' };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
+  @Get('get-patient-names')
+  async getPatientNames() {
+    try {
+      const patients = await this.supabaseService.getPatientNames();
+
+      if (!patients || patients.length === 0) {
+        throw new HttpException('No patients found', HttpStatus.NOT_FOUND);
+      }
+
+      return { patients };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while fetching patient names',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

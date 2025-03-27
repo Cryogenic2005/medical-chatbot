@@ -338,26 +338,6 @@ export class SupabaseService {
     }
   }
 
-  async getPatientDisplayList() {
-    try {
-      const { data, error } = await this.supabase
-        .from('patient_display')
-        .select('*')
-        .order('full_name', { ascending: true });
-
-      if (error) {
-        throw new Error(
-          `Error fetching patient display list: ${error.message}`,
-        );
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error in getPatientDisplayList:', error);
-      throw error;
-    }
-  }
-
   async fetchUserBookings(
     userId: string,
     startTime: string,
