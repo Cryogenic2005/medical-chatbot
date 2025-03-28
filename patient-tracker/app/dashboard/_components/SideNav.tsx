@@ -44,13 +44,7 @@ function SideNav() {
       name: "Patients",
       icon: CircleUserRound,
       path: "/dashboard/patients",
-    },
-    {
-      id: 3,
-      name: "Settings",
-      icon: Settings,
-      path: "/dashboard/settings",
-    },
+    }
   ];
 
   return (

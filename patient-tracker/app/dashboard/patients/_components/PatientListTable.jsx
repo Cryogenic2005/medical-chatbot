@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash, Search, Bell } from "lucide-react";
 import { AgGridReact } from "ag-grid-react";
@@ -21,6 +21,7 @@ function PatientListTable({ reload, setReload }) {
   const pagination = true;
   const paginationPageSize = 10;
   const paginationPageSizeSelector = [25, 50, 100];
+  const gridRef = useRef(null);
 
   const [rowData, setRowData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ function PatientListTable({ reload, setReload }) {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
-                  toast("Patient Deleted Successfully");
+                  deletePatient(props.data.id);
                   setReload(true);
                 }}
               >
@@ -69,12 +70,11 @@ function PatientListTable({ reload, setReload }) {
   };
 
   const [colDefs, setColDefs] = useState([
-    { field: "patient_id", headerName: "Patient ID", hide: true },
+    { field: "id", headerName: "Patient ID", hide: true },
     { field: "full_name", headerName: "Name", filter: true },
-    { field: "email", headerName: "Email", filter: true },
     { field: "phone_number", headerName: "Phone Number", filter: true },
-    { field: "age", headerName: "Age", filter: true },
-    { field: "gender", headerName: "Gender", filter: true },
+    { field: "age", headerName: "Age", filter: true, maxWidth: 100 },
+    { field: "gender", headerName: "Gender", filter: true, maxWidth: 100 },
     {
       field: "medical_condition",
       headerName: "Medical Condition",
@@ -85,7 +85,7 @@ function PatientListTable({ reload, setReload }) {
       field: "action",
       headerName: "Action",
       cellRenderer: CustomButtons,
-      width: 100,
+      maxWidth: 120,
     },
   ]);
 
@@ -94,17 +94,45 @@ function PatientListTable({ reload, setReload }) {
       const response = await fetch(
         `http://${window.location.hostname}:${
           process.env.NEXT_PUBLIC_API_PORT || 3000
-        }/api/data/get-patient-display-list`
+        }/api/data/get-patients`
       );
+
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
+
       const data = await response.json();
       setRowData(data.patients || []);
     } catch (error) {
       setError(error.message || "Failed to fetch patients data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deletePatient = async (patientId) => {
+    try {
+      const response = await fetch(
+        `http://${window.location.hostname}:${
+          process.env.NEXT_PUBLIC_API_PORT || 3000
+        }/api/data/delete-patient`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: patientId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("Patient deleted successfully");
+    } catch (error) {
+      console.error("Error deleting patient:", error);
+      toast.error("Failed to delete patient");
     }
   };
 
@@ -138,6 +166,12 @@ function PatientListTable({ reload, setReload }) {
       toast.error("Failed to send notification");
     }
   };
+
+  useEffect(() => {
+    if (gridRef.current) {
+      gridRef.current.api.sizeColumnsToFit();
+    }
+  }, [rowData]);
 
   useEffect(() => {
     setLoading(true);
@@ -174,6 +208,7 @@ function PatientListTable({ reload, setReload }) {
             pagination={pagination}
             paginationPageSize={paginationPageSize}
             paginationPageSizeSelector={paginationPageSizeSelector}
+            onGridReady={(params) => (gridRef.current = params)}
           />
         </div>
       )}

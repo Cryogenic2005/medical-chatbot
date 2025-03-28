@@ -324,9 +324,8 @@ export class SupabaseService {
   async getPatientNames() {
     try {
       const { data, error } = await this.supabase
-        .from('profiles')
+        .from('patients')
         .select('id, full_name')
-        .eq('role', 'patient'); // Filter by patients only
 
       if (error) {
         throw new Error(`Error fetching patient names: ${error.message}`);
@@ -335,26 +334,6 @@ export class SupabaseService {
       return data; // Return the array of patients
     } catch (error) {
       console.error('Error fetching patient names:', error.message);
-      throw error;
-    }
-  }
-
-  async getPatientDisplayList() {
-    try {
-      const { data, error } = await this.supabase
-        .from('patient_display')
-        .select('*')
-        .order('full_name', { ascending: true });
-
-      if (error) {
-        throw new Error(
-          `Error fetching patient display list: ${error.message}`,
-        );
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error in getPatientDisplayList:', error);
       throw error;
     }
   }
