@@ -165,3 +165,20 @@ create table public.user_sessions (
     )
   )
 ) TABLESPACE pg_default;
+
+CREATE OR REPLACE FUNCTION public.onAuthUserCreatedTrigger()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, role, full_name)
+  VALUES (NEW.id, 'patient', NEW.metadata->>'full_name');
+
+  RETURN NEW;
+END;
+$$;
+
+create trigger OnAuthUserCreated
+  after insert on auth.users
+  for each row execute procedure public.onAuthUserCreatedTrigger();
