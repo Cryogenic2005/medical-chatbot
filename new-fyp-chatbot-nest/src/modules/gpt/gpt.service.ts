@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { SupabaseService } from '../supabase/supabase.service';
 import { MapService } from '../map/map.service';
-import { PatientService } from '../patient/patient.service';
 import { ExerciseAllocationService } from '../exercise/exercise_allocation.service';
 
 import { DateTime } from 'luxon';
@@ -17,7 +16,6 @@ export class ChatService {
   constructor(
     private readonly supabaseService: SupabaseService, // Inject SupabaseService
     private readonly mapService: MapService,
-    private readonly patientService: PatientService,
     private readonly exerciseAllocationService: ExerciseAllocationService,
   ) {
     this.openai = new OpenAI({
