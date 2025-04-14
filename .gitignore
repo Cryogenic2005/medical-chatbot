@@ -18,3 +18,8 @@ app.json
 newfypchatbot-8b49e-firebase-adminsdk-u2zms-210a7c7c29.json
 
 .vscode
+
+.env
+
+# Python
+venv/
