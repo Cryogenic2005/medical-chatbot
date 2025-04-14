@@ -14,6 +14,8 @@ export class ChatController {
     @Body('userId') userId: string,
     @Body('content') content: string,
   ) {
+    // Returns the response from the chat service
+    // Format: { response: string }
     return this.chatService.chatWithGPT(userId, content);
   }
 
