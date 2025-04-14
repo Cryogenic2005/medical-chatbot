@@ -301,22 +301,17 @@ export class SupabaseService {
     }
   }
 
-  // Fetch patient input by patient_id
-  async fetchUserInputsByPatientId(patientId: string) {
+  async fetchPatientInfoByPatientId(patientId: string) {
     try {
       const { data, error } = await this.supabase
-        .from('patient_inputs')
+        .from('patients')
         .select('*')
-        .eq('patient_id', patientId)
+        .eq('id', patientId)
         .single();
-
-      if (error) {
-        throw new Error(`Error fetching patient inputs: ${error.message}`);
-      }
 
       return data;
     } catch (error) {
-      console.error('Error fetching patient inputs:', error.message);
+      console.error('Error fetching patient info:', error.message);
       throw error;
     }
   }

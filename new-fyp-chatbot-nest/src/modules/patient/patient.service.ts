@@ -82,25 +82,4 @@ export class PatientService {
       throw new Error(`Failed to deregister patient: ${error.message}`);
     }
   }
-
-  // New function to fetch doctor_inputs by patient_id
-  async getDoctorInputsByPatientId(patientId: string) {
-    try {
-      const { data, error } = await this.supabaseService
-        .getClient()
-        .from('doctor_inputs')
-        .select('*')
-        .eq('patient_id', patientId)
-        .single();
-
-      if (error) {
-        throw new Error(`Error fetching doctor inputs: ${error.message}`);
-      }
-
-      return data; // Return the fetched data directly
-    } catch (error) {
-      console.error('Error fetching doctor inputs:', error.message);
-      throw error; // Rethrow the error to handle it properly
-    }
-  }
 }

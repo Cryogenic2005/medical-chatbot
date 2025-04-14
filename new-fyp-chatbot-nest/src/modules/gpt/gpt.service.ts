@@ -102,14 +102,8 @@ export class ChatService {
       }
 
       // Fetch patient details for personalization
-
-      const patientDetails =
-        await this.supabaseService.fetchUserInputsByPatientId(userId);
-
-      //Fetch Doctor Inputs
-
-      const doctorInput =
-        await this.patientService.getDoctorInputsByPatientId(userId);
+      const patientInfo =
+        await this.supabaseService.fetchPatientInfoByPatientId(userId);
 
       // Extract the current exercise from the session
       const currentExercise = userSession?.current_exercise || 'exercise';
@@ -188,8 +182,7 @@ export class ChatService {
           strategy,
           strategyExamples,
           newExercise.name,
-          patientDetails,
-          doctorInput,
+          patientInfo,
           conversationHistory,
         );
 
@@ -244,8 +237,7 @@ export class ChatService {
         strategy,
         strategyExampleText,
         currentExercise,
-        patientDetails,
-        doctorInput,
+        patientInfo,
         content,
         conversationHistory,
       );
@@ -404,12 +396,8 @@ export class ChatService {
       }
 
       // Fetch patient details for personalization
-      const patientDetails =
-        await this.supabaseService.fetchUserInputsByPatientId(userId);
-
-      //Fetch Doctor Inputs
-      const doctorInput =
-        await this.patientService.getDoctorInputsByPatientId(userId);
+      const patientInfo = 
+        await this.supabaseService.fetchPatientInfoByPatientId(userId);
 
       const conversationHistory =
         await this.supabaseService.fetchChatHistory(userId);
@@ -418,8 +406,7 @@ export class ChatService {
         strategy,
         strategyExamples,
         newExercise.name, // Use the new exercise here
-        patientDetails,
-        doctorInput,
+        patientInfo,
         conversationHistory,
       );
 
@@ -570,18 +557,17 @@ export class ChatService {
     strategy: string,
     strategyExamples: string, // Pass examples as a single string
     currentExercise: string, // Include exercise in prompt
-    patientDetails: any, // Include patient details
-    doctorInputs: any,
+    patientInfo: any,
     lastUserResponse: string,
     conversationHistory: { role: 'user' | 'assistant'; content: string }[], // Pass conversation history
   ): string {
     // Extract patient details like age, gender for personalization
-    const { age, gender } = patientDetails || {
+    const { age, gender } = patientInfo || {
       age: 'unknown',
       gender: 'unknown',
     };
 
-    const { medical_condition, disability_level } = doctorInputs || {
+    const { medical_condition, disability_level } = patientInfo || {
       medical_condition: 'unknown',
       disability_level: 'unknown',
     };
@@ -611,17 +597,16 @@ export class ChatService {
     strategy: string,
     strategyExamples: string[],
     newExercise: string,
-    patientDetails: any,
-    doctorInputs: any,
+    patientInfo: any,
     conversationHistory: any,
   ): string {
     // Extract patient details like age, gender for personalization
-    const { age, gender } = patientDetails || {
+    const { age, gender } = patientInfo || {
       age: 'unknown',
       gender: 'unknown',
     };
 
-    const { medical_condition, disability_level } = doctorInputs || {
+    const { medical_condition, disability_level } = patientInfo || {
       medical_condition: 'unknown',
       disability_level: 'unknown',
     };
