@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from twilio.rest import Client
+import warnings
 
 send_bp = Blueprint('send', __name__)
 
@@ -10,6 +11,7 @@ def send_message():
     body = data.get("body")
 
     if not to_number or not body:
+        warnings.warn("Bot endpoint '/send' called without 'to' or 'body'")
         return jsonify({"error": "Missing 'to' or 'body'"}), 400
 
     try:
